@@ -13,6 +13,8 @@
     font-family: 'Urbanist', sans-serif;
     background-color: #000000;
     color: #EAEAEA;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
   
   h1, h2, h3, .street-font {
@@ -27,6 +29,22 @@
   .grunge-font {
     font-family: 'Poppins', sans-serif;
     letter-spacing: 0.02em;
+  }
+  
+  /* Responsive font sizes */
+  @media (max-width: 640px) {
+    h1 {
+      font-size: 2.5rem !important;
+    }
+    h2 {
+      font-size: 2rem !important;
+    }
+    h3 {
+      font-size: 1.5rem !important;
+    }
+    .street-font {
+      font-size: 0.875rem !important;
+    }
   }
 }
 
@@ -66,6 +84,27 @@
   .text-green-glow {
     text-shadow: 0 0 10px rgba(0, 255, 65, 0.5);
   }
+  
+  /* Responsive container */
+  .container-responsive {
+    width: 100%;
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  
+  @media (min-width: 640px) {
+    .container-responsive {
+      padding-left: 1.5rem;
+      padding-right: 1.5rem;
+    }
+  }
+  
+  @media (min-width: 1024px) {
+    .container-responsive {
+      padding-left: 2rem;
+      padding-right: 2rem;
+    }
+  }
 }
 
 /* Custom Scrollbar */
@@ -96,9 +135,15 @@
   50% { text-shadow: 0 0 20px #39FF14, 0 0 40px #39FF14; }
 }
 
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 .animate-fade-in { animation: fade-in 0.5s ease-out; }
 .animate-slide-up { animation: slide-up 0.3s ease-out; }
 .animate-glow-green { animation: glow-green 2s ease-in-out infinite; }
+.animate-spin-slow { animation: spin-slow 3s linear infinite; }
 
 /* Green Glow Effects */
 .green-glow {
@@ -116,4 +161,44 @@
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+}
+
+/* Loading spinner */
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(0, 255, 65, 0.2);
+  border-top-color: #00FF41;
+  border-radius: 50%;
+  animation: spin-slow 1s linear infinite;
+}
+
+/* Responsive table */
+.responsive-table {
+  overflow-x: auto;
+  display: block;
+  width: 100%;
+}
+
+/* Mobile menu transition */
+.mobile-menu-enter {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+.mobile-menu-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 300ms, transform 300ms;
+}
+
+.mobile-menu-exit {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.mobile-menu-exit-active {
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: opacity 300ms, transform 300ms;
 }
