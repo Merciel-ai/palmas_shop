@@ -9,7 +9,14 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [currentImage, setCurrentImage] = useState(0);
   const navigate = useNavigate();
-  const { signin } = useAuth();
+  const { signin, user } = useAuth();
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      navigate('/profile', { replace: true });
+    }
+  }, [user, navigate]);
 
   const bgImages = [
     "https://images.unsplash.com/photo-1534011546717-407bced4d25c?w=1920",
@@ -30,12 +37,24 @@ const Login = () => {
     setError('');
     const result = await signin(email, password);
     if (result.success) {
-      navigate('/');
+      navigate('/profile', { replace: true });
     } else {
       setError(result.error);
     }
     setIsLoading(false);
   };
+
+  // Show loading while checking auth
+  if (user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-black pt-20">
+        <div className="text-center">
+          <div className="loading-spinner mx-auto mb-4"></div>
+          <p className="text-[#00FF41] text-sm font-mono tracking-wide">REDIRECTING...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen pt-20 relative overflow-hidden">
@@ -43,7 +62,7 @@ const Login = () => {
       {bgImages.map((img, idx) => (
         <div
           key={idx}
-          className={`absolute inset-0 transition-opacity duration-2000 ${
+          className={`absolute inset-0 transition-opacity duration-1000 ${
             currentImage === idx ? 'opacity-100' : 'opacity-0'
           }`}
         >
@@ -56,33 +75,33 @@ const Login = () => {
         <div className="grid md:grid-cols-2 gap-12 items-center min-h-[calc(100vh-80px)]">
           {/* Left Side - Dynamic Message */}
           <div className="text-center md:text-left animate-slide-up">
-            <div className="inline-block p-4 bg-afro-orange/20 rounded-2xl backdrop-blur-sm mb-8">
-              <div className="text-6xl animate-float">✦</div>
+            <div className="inline-block p-4 bg-[#00FF41]/10 rounded-2xl backdrop-blur-sm mb-8 border border-[#00FF41]/20">
+              <div className="text-6xl animate-float text-[#00FF41]">✦</div>
             </div>
-            <h1 className="text-7xl md:text-8xl font-bebas text-white mb-4 animate-glow">WELCOME<br/>BACK</h1>
-            <p className="text-afro-gold text-xl mb-6">The exclusive circle awaits.</p>
+            <h1 className="text-7xl md:text-8xl font-street text-white mb-4 animate-glow-green">WELCOME<br/>BACK</h1>
+            <p className="text-[#00FF41] text-xl mb-6 font-mono tracking-wide">THE EXCLUSIVE CIRCLE AWAITS.</p>
             <div className="space-y-4 text-gray-300">
               <div className="flex items-center gap-3 justify-center md:justify-start">
-                <div className="w-2 h-2 bg-afro-orange rounded-full"></div>
-                <span>Access limited drops first</span>
+                <div className="w-2 h-2 bg-[#00FF41] rounded-full animate-pulse"></div>
+                <span className="text-sm sm:text-base">Access limited drops first</span>
               </div>
               <div className="flex items-center gap-3 justify-center md:justify-start">
-                <div className="w-2 h-2 bg-afro-orange rounded-full"></div>
-                <span>Exclusive member pricing</span>
+                <div className="w-2 h-2 bg-[#00FF41] rounded-full animate-pulse"></div>
+                <span className="text-sm sm:text-base">Exclusive member pricing</span>
               </div>
               <div className="flex items-center gap-3 justify-center md:justify-start">
-                <div className="w-2 h-2 bg-afro-orange rounded-full"></div>
-                <span>Direct negotiations with curator</span>
+                <div className="w-2 h-2 bg-[#00FF41] rounded-full animate-pulse"></div>
+                <span className="text-sm sm:text-base">Direct negotiations with curator</span>
               </div>
             </div>
           </div>
 
           {/* Right Side - Login Form */}
           <div className="animate-zoom-in">
-            <div className="bg-white/10 backdrop-blur-xl rounded-2xl p-8 border border-afro-gold/30 shadow-2xl">
+            <div className="bg-black/40 backdrop-blur-xl rounded-2xl p-6 sm:p-8 border border-[#00FF41]/30 shadow-2xl">
               <div className="text-center mb-8">
-                <h2 className="text-3xl font-bebas text-afro-gold">SIGN IN</h2>
-                <p className="text-gray-300 text-sm mt-2">Enter the realm of the few</p>
+                <h2 className="text-3xl sm:text-4xl font-street text-[#00FF41]">SIGN IN</h2>
+                <p className="text-gray-400 text-xs sm:text-sm mt-2 font-mono">ENTER THE REALM OF THE FEW</p>
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-6">
@@ -98,7 +117,7 @@ const Login = () => {
                     placeholder="Email Address"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full bg-black/50 border border-afro-gold/30 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-afro-orange transition placeholder:text-gray-500"
+                    className="w-full bg-black/50 border border-[#00FF41]/30 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-[#00FF41] transition placeholder:text-gray-500 text-sm sm:text-base"
                     required
                   />
                 </div>
@@ -109,7 +128,7 @@ const Login = () => {
                     placeholder="Password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full bg-black/50 border border-afro-gold/30 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-afro-orange transition placeholder:text-gray-500"
+                    className="w-full bg-black/50 border border-[#00FF41]/30 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-[#00FF41] transition placeholder:text-gray-500 text-sm sm:text-base"
                     required
                   />
                 </div>
@@ -117,7 +136,7 @@ const Login = () => {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full bg-gradient-to-r from-afro-orange to-afro-gold text-black py-3 rounded-lg font-bold hover:shadow-lg hover:shadow-afro-orange/50 transition-all transform hover:scale-105 disabled:opacity-50"
+                  className="w-full bg-gradient-to-r from-[#00FF41] to-[#00A86B] text-black py-3 rounded-lg font-bold hover:shadow-lg hover:shadow-[#00FF41]/50 transition-all transform hover:scale-105 disabled:opacity-50 text-sm sm:text-base"
                 >
                   {isLoading ? (
                     <span className="flex items-center justify-center gap-2">
@@ -125,7 +144,7 @@ const Login = () => {
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
                       </svg>
-                      Accessing...
+                      ACCESSING...
                     </span>
                   ) : (
                     'ENTER THE DROP'
@@ -134,9 +153,9 @@ const Login = () => {
               </form>
 
               <div className="mt-6 text-center">
-                <p className="text-gray-400">
+                <p className="text-gray-400 text-xs sm:text-sm">
                   Not part of the circle?{' '}
-                  <Link to="/signup" className="text-afro-orange hover:text-afro-gold transition font-semibold">
+                  <Link to="/signup" className="text-[#00FF41] hover:text-[#39FF14] transition font-semibold">
                     Join Now
                   </Link>
                 </p>
