@@ -18,10 +18,10 @@ const Switcher = () => {
       {/* Language Switcher */}
       <button
         onClick={toggleLanguage}
-        className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#1A1A1A] hover:bg-[#FF5C00]/20 transition border border-[#FF5C00]/30"
+        className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#1A1A1A] hover:bg-[#00FF41]/20 transition border border-[#00FF41]/30"
         aria-label="Switch Language"
       >
-        <span className="text-sm font-medium">
+        <span className="text-sm font-medium text-white">
           {currentLang === 'en' ? '🇫🇷 FR' : '🇬🇧 EN'}
         </span>
       </button>
@@ -29,7 +29,7 @@ const Switcher = () => {
       {/* Theme Switcher */}
       <button
         onClick={toggleTheme}
-        className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#1A1A1A] hover:bg-[#FF5C00]/20 transition border border-[#FF5C00]/30"
+        className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#1A1A1A] hover:bg-[#00FF41]/20 transition border border-[#00FF41]/30"
         aria-label="Toggle Theme"
       >
         <span className="text-sm">
