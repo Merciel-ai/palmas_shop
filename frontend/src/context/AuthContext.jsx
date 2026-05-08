@@ -12,14 +12,20 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const storedUser = localStorage.getItem('palmas_user');
     if (storedUser) {
-      setUser(JSON.parse(storedUser));
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch (error) {
+        console.error('Error parsing stored user:', error);
+        localStorage.removeItem('palmas_user');
+      }
     }
     setLoading(false);
   }, []);
 
   const signup = async (name, email, password) => {
     try {
-      const response = await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/signup`, {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const response = await axios.post(`${apiUrl}/api/auth/signup`, {
         name,
         email,
         password
@@ -29,14 +35,20 @@ export const AuthProvider = ({ children }) => {
         localStorage.setItem('palmas_user', JSON.stringify(response.data.user));
         return { success: true };
       }
+      return { success: false, error: 'Signup failed' };
     } catch (error) {
-      return { success: false, error: error.response?.data?.error || 'Signup failed' };
+      console.error('Signup error:', error);
+      return { 
+        success: false, 
+        error: error.response?.data?.error || 'Une erreur est survenue. Veuillez réessayer.'
+      };
     }
   };
 
   const signin = async (email, password) => {
     try {
-      const response = await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/signin`, {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const response = await axios.post(`${apiUrl}/api/auth/signin`, {
         email,
         password
       });
@@ -45,8 +57,13 @@ export const AuthProvider = ({ children }) => {
         localStorage.setItem('palmas_user', JSON.stringify(response.data.user));
         return { success: true };
       }
+      return { success: false, error: 'Invalid credentials' };
     } catch (error) {
-      return { success: false, error: error.response?.data?.error || 'Login failed' };
+      console.error('Signin error:', error);
+      return { 
+        success: false, 
+        error: error.response?.data?.error || 'Email ou mot de passe incorrect'
+      };
     }
   };
 
