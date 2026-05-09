@@ -1,8 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
+import { useAuth } from '../context/AuthContext';
 
 const Home = () => {
+  const { user } = useAuth(); // Get authenticated user
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('ALL');
@@ -10,7 +12,25 @@ const Home = () => {
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, mins: 0, secs: 0 });
   const [currentSlide, setCurrentSlide] = useState(0);
 
-  // Updated slides - removed video to fix 404 error
+  const apiUrl = import.meta.env.VITE_API_URL || 'https://palmas-api-jhip.onrender.com';
+
+  // Helper function to fix image URLs
+  const getImageUrl = (imagePath) => {
+    if (!imagePath) return '/placeholder-image.jpg';
+    
+    if (imagePath.includes('localhost:5000')) {
+      return imagePath.replace('http://localhost:5000', apiUrl);
+    }
+    
+    if (imagePath.startsWith('https://')) return imagePath;
+    
+    if (imagePath.startsWith('/uploads/')) {
+      return `${apiUrl}${imagePath}`;
+    }
+    
+    return imagePath;
+  };
+
   const slides = [
     {
       image: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1920",
@@ -66,7 +86,6 @@ const Home = () => {
 
   const fetchProducts = async () => {
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
       const response = await axios.get(`${apiUrl}/api/products`);
       setProducts(response.data);
       setLoading(false);
@@ -78,7 +97,6 @@ const Home = () => {
 
   const fetchSettings = async () => {
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
       const response = await axios.get(`${apiUrl}/api/settings`);
       setSiteSettings(response.data);
     } catch (error) {
@@ -118,7 +136,7 @@ const Home = () => {
 
   return (
     <div className="bg-black">
-      {/* Cinematic Hero Section - No video, only images */}
+      {/* Cinematic Hero Section */}
       <section className="relative h-screen overflow-hidden">
         {slides.map((slide, index) => (
           <div
@@ -187,67 +205,94 @@ const Home = () => {
             </div>
           </div>
 
-          {/* Filter Buttons */}
-          <div className="flex justify-center gap-1 sm:gap-2 md:gap-4 mb-8 sm:mb-12 flex-wrap">
-            {['ALL', 'HOODIES', 'TEES', 'ACCESSORIES', 'JACKETS', 'PANTS', 'SHORTS', 'SHOES', 'HATS', 'BAGS', 'JEWELRY'].map(cat => (
-              <button
-                key={cat}
-                onClick={() => setFilter(cat)}
-                className={`px-3 sm:px-6 md:px-8 py-1.5 sm:py-2 md:py-3 rounded-full transition-all duration-300 text-[10px] sm:text-xs md:text-sm tracking-wide font-mono ${
-                  filter === cat 
-                    ? 'bg-[#00FF41] text-black shadow-lg shadow-[#00FF41]/50' 
-                    : 'border border-[#00FF41]/30 hover:border-[#00FF41] text-gray-300'
-                }`}
-              >
-                {cat === 'ALL' ? 'ALL' : cat}
-              </button>
-            ))}
-          </div>
-
-          {/* Products Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-            {filteredProducts.length === 0 ? (
-              <div className="col-span-full text-center py-12">
-                <p className="text-gray-400">No products available. Check back soon!</p>
+          {/* PRODUCTS SECTION - ONLY VISIBLE TO LOGGED-IN USERS */}
+          {user ? (
+            <>
+              {/* Filter Buttons - Only visible when logged in */}
+              <div className="flex justify-center gap-1 sm:gap-2 md:gap-4 mb-8 sm:mb-12 flex-wrap">
+                {['ALL', 'HOODIES', 'TEES', 'ACCESSORIES', 'JACKETS', 'PANTS', 'SHORTS', 'SHOES', 'HATS', 'BAGS', 'JEWELRY'].map(cat => (
+                  <button
+                    key={cat}
+                    onClick={() => setFilter(cat)}
+                    className={`px-3 sm:px-6 md:px-8 py-1.5 sm:py-2 md:py-3 rounded-full transition-all duration-300 text-[10px] sm:text-xs md:text-sm tracking-wide font-mono ${
+                      filter === cat 
+                        ? 'bg-[#00FF41] text-black shadow-lg shadow-[#00FF41]/50' 
+                        : 'border border-[#00FF41]/30 hover:border-[#00FF41] text-gray-300'
+                    }`}
+                  >
+                    {cat === 'ALL' ? 'ALL' : cat}
+                  </button>
+                ))}
               </div>
-            ) : (
-              filteredProducts.map((product, index) => (
-                <Link to={`/product/${product._id}`} key={product._id}>
-                  <div className="group relative overflow-hidden bg-[#111111] rounded-2xl transform transition-all duration-500 hover:scale-105 hover:shadow-xl hover:shadow-[#00FF41]/20 reveal" style={{ transitionDelay: `${index * 100}ms` }}>
-                    <div className="relative overflow-hidden h-80 sm:h-96 lg:h-[500px]">
-                      <img src={product.images?.[0]} alt={product.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                      
-                      {product.piecesLeft <= 10 && product.piecesLeft > 0 && (
-                        <div className="absolute top-4 right-4 bg-[#00FF41] text-black px-2 sm:px-3 py-1 text-[10px] sm:text-xs font-bold rounded-full z-10 animate-pulse">
-                          LAST {product.piecesLeft}
-                        </div>
-                      )}
-                      {product.piecesLeft === 0 && (
-                        <div className="absolute inset-0 bg-black/80 flex items-center justify-center z-10 backdrop-blur-sm">
-                          <span className="text-white text-lg sm:text-xl font-bold">SOLD OUT</span>
-                        </div>
-                      )}
-                    </div>
-                    
-                    <div className="p-4 sm:p-6">
-                      <h3 className="text-base sm:text-lg md:text-xl font-bold mb-2 group-hover:text-[#00FF41] transition-colors line-clamp-1">{product.name}</h3>
-                      <div className="flex items-baseline gap-2 sm:gap-3">
-                        <span className="text-lg sm:text-xl md:text-2xl font-bold text-[#00FF41]">{convertToCFA(product.price)} CFA</span>
-                        {product.originalPrice && (
-                          <span className="text-gray-500 line-through text-xs sm:text-sm">{convertToCFA(product.originalPrice)} CFA</span>
-                        )}
-                      </div>
-                      <div className="mt-3 sm:mt-4 flex items-center justify-between">
-                        <span className="text-[10px] sm:text-xs text-[#00FF41] font-mono">{product.category}</span>
-                        <span className="text-[10px] sm:text-xs text-gray-500">✦ LIMITED ✦</span>
-                      </div>
-                    </div>
+
+              {/* Products Grid - Only visible when logged in */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+                {filteredProducts.length === 0 ? (
+                  <div className="col-span-full text-center py-12">
+                    <p className="text-gray-400">No products available. Check back soon!</p>
                   </div>
-                </Link>
-              ))
-            )}
-          </div>
+                ) : (
+                  filteredProducts.map((product, index) => (
+                    <Link to={`/product/${product._id}`} key={product._id}>
+                      <div className="group relative overflow-hidden bg-[#111111] rounded-2xl transform transition-all duration-500 hover:scale-105 hover:shadow-xl hover:shadow-[#00FF41]/20 reveal" style={{ transitionDelay: `${index * 100}ms` }}>
+                        <div className="relative overflow-hidden h-80 sm:h-96 lg:h-[500px]">
+                          <img 
+                            src={getImageUrl(product.images?.[0])} 
+                            alt={product.name} 
+                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                            onError={(e) => { e.target.onerror = null; e.target.src = '/placeholder-image.jpg'; }}
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                          
+                          {product.piecesLeft <= 10 && product.piecesLeft > 0 && (
+                            <div className="absolute top-4 right-4 bg-[#00FF41] text-black px-2 sm:px-3 py-1 text-[10px] sm:text-xs font-bold rounded-full z-10 animate-pulse">
+                              LAST {product.piecesLeft}
+                            </div>
+                          )}
+                          {product.piecesLeft === 0 && (
+                            <div className="absolute inset-0 bg-black/80 flex items-center justify-center z-10 backdrop-blur-sm">
+                              <span className="text-white text-lg sm:text-xl font-bold">SOLD OUT</span>
+                            </div>
+                          )}
+                        </div>
+                        
+                        <div className="p-4 sm:p-6">
+                          <h3 className="text-base sm:text-lg md:text-xl font-bold mb-2 group-hover:text-[#00FF41] transition-colors line-clamp-1">{product.name}</h3>
+                          <div className="flex items-baseline gap-2 sm:gap-3">
+                            <span className="text-lg sm:text-xl md:text-2xl font-bold text-[#00FF41]">{convertToCFA(product.price)} CFA</span>
+                            {product.originalPrice && (
+                              <span className="text-gray-500 line-through text-xs sm:text-sm">{convertToCFA(product.originalPrice)} CFA</span>
+                            )}
+                          </div>
+                          <div className="mt-3 sm:mt-4 flex items-center justify-between">
+                            <span className="text-[10px] sm:text-xs text-[#00FF41] font-mono">{product.category}</span>
+                            <span className="text-[10px] sm:text-xs text-gray-500">✦ LIMITED ✦</span>
+                          </div>
+                        </div>
+                      </div>
+                    </Link>
+                  ))
+                )}
+              </div>
+            </>
+          ) : (
+            /* Login Prompt - Shown when user is NOT logged in */
+            <div className="text-center py-16 sm:py-24 reveal">
+              <div className="bg-gradient-to-br from-[#00FF41]/10 to-transparent border border-[#00FF41]/20 rounded-2xl p-8 sm:p-12 max-w-2xl mx-auto">
+                <div className="text-6xl mb-4">🔒</div>
+                <h3 className="text-2xl sm:text-3xl font-bold text-white mb-3">Exclusive Access Only</h3>
+                <p className="text-gray-400 mb-6">Sign in or create an account to view our exclusive collection.</p>
+                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                  <Link to="/login" className="border-2 border-[#00FF41] text-[#00FF41] px-6 py-3 rounded-lg font-bold hover:bg-[#00FF41] hover:text-black transition">
+                    SIGN IN
+                  </Link>
+                  <Link to="/signup" className="bg-[#00FF41] text-black px-6 py-3 rounded-lg font-bold hover:bg-[#39FF14] transition">
+                    JOIN THE MOVEMENT
+                  </Link>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </section>
 
