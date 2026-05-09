@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react'; // Add useContext here
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Home from './pages/Home';
@@ -15,13 +15,13 @@ import NegotiationModal from './components/NegotiationModal';
 import { CartProvider } from './context/CartContext';
 import { AuthProvider } from './context/AuthContext';
 import { WishlistProvider } from './context/WishlistContext';
-import { ThemeProvider } from './context/ThemeContext';
+import { ThemeProvider, ThemeContext } from './context/ThemeContext'; // Added ThemeContext here
 import './i18n';
 
 function AppContent() {
   const [toast, setToast] = useState(null);
   const [negotiationProduct, setNegotiationProduct] = useState(null);
-  const { darkMode } = React.useContext(ThemeContext) || { darkMode: true };
+  const { darkMode } = useContext(ThemeContext) || { darkMode: true }; // Changed React.useContext to useContext
 
   useEffect(() => {
     const handleToast = (e) => {
