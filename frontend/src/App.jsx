@@ -15,7 +15,7 @@ import NegotiationModal from './components/NegotiationModal';
 import { CartProvider } from './context/CartContext';
 import { AuthProvider } from './context/AuthContext';
 import { WishlistProvider } from './context/WishlistContext';
-import { ThemeContext } from './context/ThemeContext';
+import { ThemeProvider } from './context/ThemeContext';
 import './i18n';
 
 function AppContent() {
@@ -86,7 +86,7 @@ function App() {
           <WishlistProvider>
             <ThemeProvider>
               <AppContent />
-            </ThemeContext>
+            </ThemeProvider>
           </WishlistProvider>
         </CartProvider>
       </AuthProvider>
