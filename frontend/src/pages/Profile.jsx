@@ -23,54 +23,19 @@ const Profile = () => {
 
   const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
-  useEffect(() => {
-    fetchProducts();
-    fetchUserOrders();
-  useEffect(() => {
-  fetchDropSettings();
-}, []);
+  // Fetch drop settings function
+  const fetchDropSettings = async () => {
+    try {
+      const response = await axios.get(`${apiUrl}/api/admin/drop`);
+      setNextDropEnabled(response.data.nextDropEnabled);
+      setNextDropName(response.data.nextDropName);
+      setNextDropDate(response.data.nextDropDate);
+    } catch (error) {
+      console.error('Error fetching drop settings:', error);
+    }
+  };
 
-  useEffect(() => {
-       if (nextDropEnabled && nextDropDate) {
-      const timer = setInterval(() => {
-      const now = new Date();
-      const dropDate = new Date(nextDropDate);
-      const difference = dropDate - now;
-      
-      if (difference <= 0) {
-        clearInterval(timer);
-        setDropTimeLeft({ days: 0, hours: 0, mins: 0, secs: 0 });
-      } else {
-        setDropTimeLeft({
-          days: Math.floor(difference / (1000 * 60 * 60 * 24)),
-          hours: Math.floor((difference % (86400000)) / (3600000)),
-          mins: Math.floor((difference % (3600000)) / (60000)),
-          secs: Math.floor((difference % (60000)) / 1000)
-        });
-      }
-    }, 1000);
-    return () => clearInterval(timer);
-  }
-}, [nextDropEnabled, nextDropDate]);
-
-const fetchDropSettings = async () => {
-  try {
-    const response = await axios.get(`${apiUrl}/api/admin/drop`);
-    setNextDropEnabled(response.data.nextDropEnabled);
-    setNextDropName(response.data.nextDropName);
-    setNextDropDate(response.data.nextDropDate);
-  } catch (error) {
-    console.error('Error fetching drop settings:', error);
-  }
-};  
-    const params = new URLSearchParams(window.location.search);
-    const tab = params.get('tab');
-    if (tab) setActiveTab(tab);
-    
-    const timer = setTimeout(() => setShowWelcome(false), 5000);
-    return () => clearTimeout(timer);
-  }, []);
-
+  // Fetch products function
   const fetchProducts = async () => {
     try {
       const response = await axios.get(`${apiUrl}/api/products`);
@@ -80,6 +45,7 @@ const fetchDropSettings = async () => {
     }
   };
 
+  // Fetch user orders function
   const fetchUserOrders = async () => {
     try {
       const response = await axios.get(`${apiUrl}/api/orders/${user?.email}`);
@@ -88,6 +54,44 @@ const fetchDropSettings = async () => {
       console.error('Error:', error);
     }
   };
+
+  // ✅ FIXED: Single useEffect for initial data loading
+  useEffect(() => {
+    fetchProducts();
+    fetchUserOrders();
+    fetchDropSettings();
+    
+    const params = new URLSearchParams(window.location.search);
+    const tab = params.get('tab');
+    if (tab) setActiveTab(tab);
+    
+    const timer = setTimeout(() => setShowWelcome(false), 5000);
+    return () => clearTimeout(timer);
+  }, []); // Empty dependency array means this runs once on mount
+
+  // ✅ FIXED: Separate useEffect for countdown timer
+  useEffect(() => {
+    if (nextDropEnabled && nextDropDate) {
+      const timer = setInterval(() => {
+        const now = new Date();
+        const dropDate = new Date(nextDropDate);
+        const difference = dropDate - now;
+        
+        if (difference <= 0) {
+          clearInterval(timer);
+          setDropTimeLeft({ days: 0, hours: 0, mins: 0, secs: 0 });
+        } else {
+          setDropTimeLeft({
+            days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+            hours: Math.floor((difference % (86400000)) / (3600000)),
+            mins: Math.floor((difference % (3600000)) / (60000)),
+            secs: Math.floor((difference % (60000)) / 1000)
+          });
+        }
+      }, 1000);
+      return () => clearInterval(timer);
+    }
+  }, [nextDropEnabled, nextDropDate]);
 
   const formatCFA = (amount) => {
     return (amount || 0).toLocaleString();
@@ -270,17 +274,17 @@ const fetchDropSettings = async () => {
 
               {/* Next Drop Countdown - Only shows when admin enables it */}
               {nextDropEnabled && dropTimeLeft && (
-               <div className="bg-gradient-to-br from-[#00FF41]/10 to-transparent border border-[#00FF41]/20 rounded-xl p-5">
-               <h3 className="text-sm font-semibold text-white mb-2">{nextDropName || 'Next Drop'}</h3>
-               <div className="grid grid-cols-4 gap-2 text-center mb-4">
-               <div><div className="text-2xl font-bold text-white">{dropTimeLeft.days}</div><div className="text-xs text-gray-500">DAYS</div></div>
-      <div><div className="text-2xl font-bold text-white">{dropTimeLeft.hours}</div><div className="text-xs text-gray-500">HOURS</div></div>
-      <div><div className="text-2xl font-bold text-white">{dropTimeLeft.mins}</div><div className="text-xs text-gray-500">MINS</div></div>
-      <div><div className="text-2xl font-bold text-white">{dropTimeLeft.secs}</div><div className="text-xs text-gray-500">SECS</div></div>
-    </div>
-    <button className="w-full bg-[#00FF41] text-black text-sm font-medium py-2 rounded-lg hover:bg-[#39FF14] transition">NOTIFY ME</button>
-  </div>
-)}
+                <div className="bg-gradient-to-br from-[#00FF41]/10 to-transparent border border-[#00FF41]/20 rounded-xl p-5">
+                  <h3 className="text-sm font-semibold text-white mb-2">{nextDropName || 'Next Drop'}</h3>
+                  <div className="grid grid-cols-4 gap-2 text-center mb-4">
+                    <div><div className="text-2xl font-bold text-white">{dropTimeLeft.days}</div><div className="text-xs text-gray-500">DAYS</div></div>
+                    <div><div className="text-2xl font-bold text-white">{dropTimeLeft.hours}</div><div className="text-xs text-gray-500">HOURS</div></div>
+                    <div><div className="text-2xl font-bold text-white">{dropTimeLeft.mins}</div><div className="text-xs text-gray-500">MINS</div></div>
+                    <div><div className="text-2xl font-bold text-white">{dropTimeLeft.secs}</div><div className="text-xs text-gray-500">SECS</div></div>
+                  </div>
+                  <button className="w-full bg-[#00FF41] text-black text-sm font-medium py-2 rounded-lg hover:bg-[#39FF14] transition">NOTIFY ME</button>
+                </div>
+              )}
 
               <div className="bg-[#1A1A1A] rounded-xl p-5">
                 <h3 className="text-sm font-semibold text-white mb-2">Don't miss out</h3>
