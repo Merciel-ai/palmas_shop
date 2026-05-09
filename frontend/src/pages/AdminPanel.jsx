@@ -33,7 +33,24 @@ const AdminPanel = () => {
   const [imagePreviewUrls, setImagePreviewUrls] = useState([]);
   const messagesEndRef = useRef(null);
 
-  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+  const apiUrl = import.meta.env.VITE_API_URL || 'https://palmas-api-jhip.onrender.com';
+
+  // Helper function to fix image URLs
+  const getImageUrl = (imagePath) => {
+    if (!imagePath) return 'https://placehold.co/100x100/111/00FF41?text=No+Image';
+    
+    if (imagePath.includes('localhost:5000')) {
+      return imagePath.replace('http://localhost:5000', apiUrl);
+    }
+    
+    if (imagePath.startsWith('https://')) return imagePath;
+    
+    if (imagePath.startsWith('/uploads/')) {
+      return `${apiUrl}${imagePath}`;
+    }
+    
+    return imagePath;
+  };
 
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
 
@@ -341,7 +358,7 @@ const AdminPanel = () => {
       )}
 
       <div className="flex h-screen overflow-hidden">
-        {/* Sidebar - With Toggle */}
+        {/* Sidebar */}
         <div className={`${sidebarOpen ? 'w-64' : 'w-16'} bg-[#0A0A0A] border-r border-[#00FF41]/20 p-3 overflow-y-auto transition-all duration-300 relative flex-shrink-0`}>
           <button onClick={toggleSidebar}
             className="absolute -right-3 top-20 bg-[#00FF41] text-black rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold z-10 hover:bg-[#39FF14] transition">
@@ -446,7 +463,7 @@ const AdminPanel = () => {
             </div>
           )}
 
-          {/* Products Tab */}
+          {/* Products Tab - With fixed images */}
           {activeTab === 'products' && (
             <div>
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
@@ -494,7 +511,12 @@ const AdminPanel = () => {
                       <div key={product._id} className="bg-[#111] p-3 sm:p-4 rounded-xl border border-[#00FF41]/20 hover:border-[#00FF41]/50 transition">
                         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                           <div className="flex gap-3">
-                            <img src={product.images?.[0]} alt={product.name} className="w-12 h-12 sm:w-16 sm:h-16 object-cover rounded-lg" onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/100x100/111/00FF41?text=No+Image'; }} />
+                            <img 
+                              src={getImageUrl(product.images?.[0])} 
+                              alt={product.name} 
+                              className="w-12 h-12 sm:w-16 sm:h-16 object-cover rounded-lg" 
+                              onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/100x100/111/00FF41?text=No+Image'; }} 
+                            />
                             <div>
                               <h3 className="font-bold text-white text-sm sm:text-base">{product.name}</h3>
                               <p className="text-[#00FF41] font-bold text-sm sm:text-base">{formatCFA(product.priceCFA)} CFA</p>
@@ -527,7 +549,7 @@ const AdminPanel = () => {
             </div>
           )}
 
-          {/* Other Tabs - Simplified for brevity, same responsive pattern applies */}
+          {/* Negotiations Tab - Keep as is */}
           {activeTab === 'negotiations' && (
             <div className="flex flex-col lg:flex-row h-full min-h-[500px] gap-4">
               <div className="w-full lg:w-80 border-r border-[#00FF41]/20 pr-0 lg:pr-4 overflow-y-auto">
@@ -582,7 +604,7 @@ const AdminPanel = () => {
             </div>
           )}
 
-          {/* Quick placeholder for other tabs - they will follow same responsive pattern */}
+          {/* Other Tabs - Placeholder */}
           {(activeTab === 'orders' || activeTab === 'customers' || activeTab === 'discounts' || activeTab === 'analytics' || activeTab === 'drop' || activeTab === 'settings') && (
             <div>
               <h2 className="text-xl sm:text-2xl font-bold text-[#00FF41] mb-6 capitalize">{activeTab}</h2>
@@ -594,7 +616,7 @@ const AdminPanel = () => {
         </div>
       </div>
 
-      {/* Product Edit Modal - Responsive */}
+      {/* Product Edit Modal - With fixed image preview */}
       {editingProduct !== null && (
         <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4 overflow-y-auto" onClick={() => { imagePreviewUrls.forEach(url => URL.revokeObjectURL(url)); setEditingProduct(null); }}>
           <div className="bg-[#111] p-4 sm:p-6 rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto border border-[#00FF41]/20" onClick={e => e.stopPropagation()}>
