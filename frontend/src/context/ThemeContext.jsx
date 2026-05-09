@@ -46,3 +46,5 @@ export const ThemeProvider = ({ children }) => {
     React.createElement('div', { className: darkMode ? 'dark' : 'light' }, children)
   );
 };
+
+export { ThemeContext };
