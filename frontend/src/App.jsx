@@ -86,7 +86,7 @@ function App() {
           <WishlistProvider>
             <ThemeProvider>
               <AppContent />
-            </ThemeProvider>
+            </ThemeContext>
           </WishlistProvider>
         </CartProvider>
       </AuthProvider>
