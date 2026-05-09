@@ -21,7 +21,27 @@ const Profile = () => {
   const [nextDropDate, setNextDropDate] = useState(null);
   const [dropTimeLeft, setDropTimeLeft] = useState({ days: 0, hours: 0, mins: 0, secs: 0 });
 
-  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+  const apiUrl = import.meta.env.VITE_API_URL || 'https://palmas-api-jhip.onrender.com';
+
+  // Helper function to fix image URLs
+  const getImageUrl = (imagePath) => {
+    if (!imagePath) return '/placeholder-image.jpg';
+    
+    // If it's a localhost URL, replace with production URL
+    if (imagePath.includes('localhost:5000')) {
+      return imagePath.replace('http://localhost:5000', 'https://palmas-api-jhip.onrender.com');
+    }
+    
+    // If it's already a full HTTPS URL, return it
+    if (imagePath.startsWith('https://')) return imagePath;
+    
+    // If it's a relative path, prepend the API URL
+    if (imagePath.startsWith('/uploads/')) {
+      return `https://palmas-api-jhip.onrender.com${imagePath}`;
+    }
+    
+    return imagePath;
+  };
 
   // Fetch drop settings function
   const fetchDropSettings = async () => {
@@ -39,9 +59,10 @@ const Profile = () => {
   const fetchProducts = async () => {
     try {
       const response = await axios.get(`${apiUrl}/api/products`);
+      console.log('Products loaded:', response.data.length);
       setProducts(response.data);
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Error fetching products:', error);
     }
   };
 
@@ -51,7 +72,7 @@ const Profile = () => {
       const response = await axios.get(`${apiUrl}/api/orders/${user?.email}`);
       setUserOrders(response.data);
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Error fetching orders:', error);
     }
   };
 
@@ -192,8 +213,12 @@ const Profile = () => {
                       <div className="group bg-[#1A1A1A] rounded-xl overflow-hidden hover:shadow-xl transition-all duration-300">
                         <div className="relative overflow-hidden h-64">
                           <img 
-                            src={product.images?.[0]} 
+                            src={getImageUrl(product.images?.[0])} 
                             alt={product.name}
+                            onError={(e) => {
+                              e.target.onerror = null;
+                              e.target.src = '/placeholder-image.jpg';
+                            }}
                             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                           />
                           <div className="absolute top-3 left-3 flex gap-2">
@@ -303,7 +328,15 @@ const Profile = () => {
                 <div className="space-y-2">
                   {wishlist.slice(0, 3).map((item) => (
                     <div key={item._id} className="flex items-center gap-3">
-                      <img src={item.images?.[0]} alt={item.name} className="w-10 h-10 rounded object-cover" />
+                      <img 
+                        src={getImageUrl(item.images?.[0])} 
+                        alt={item.name}
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = '/placeholder-image.jpg';
+                        }}
+                        className="w-10 h-10 rounded object-cover" 
+                      />
                       <div className="flex-1">
                         <p className="text-xs text-white">{item.name}</p>
                         <p className="text-xs text-[#00FF41]">{formatCFA(item.priceCFA)} CFA</p>
@@ -389,7 +422,15 @@ const Profile = () => {
                 {wishlist.map((product) => (
                   <div key={product._id} className="bg-[#1A1A1A] rounded-xl overflow-hidden">
                     <div className="relative h-48">
-                      <img src={product.images?.[0]} alt={product.name} className="w-full h-full object-cover" />
+                      <img 
+                        src={getImageUrl(product.images?.[0])} 
+                        alt={product.name}
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = '/placeholder-image.jpg';
+                        }}
+                        className="w-full h-full object-cover" 
+                      />
                       <button 
                         onClick={() => handleWishlist(product)}
                         className="absolute top-2 right-2 w-8 h-8 bg-black/50 rounded-full flex items-center justify-center hover:bg-red-500 transition"
