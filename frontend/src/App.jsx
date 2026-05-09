@@ -15,7 +15,7 @@ import NegotiationModal from './components/NegotiationModal';
 import { CartProvider } from './context/CartContext';
 import { AuthProvider } from './context/AuthContext';
 import { WishlistProvider } from './context/WishlistContext';
-import { ThemeProvider } from './context/ThemeContext';
+import { ThemeContext } from './context/ThemeContext';
 import './i18n';
 
 function AppContent() {
