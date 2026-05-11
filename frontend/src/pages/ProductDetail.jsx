@@ -17,8 +17,48 @@ const ProductDetail = () => {
   const [quantity, setQuantity] = useState(1);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showNotification, setShowNotification] = useState(null);
+  const [isImageLoading, setIsImageLoading] = useState(true);
+  const [fullscreenImage, setFullscreenImage] = useState(null);
 
-  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+  const apiUrl = import.meta.env.VITE_API_URL || 'https://palmas-api-jhip.onrender.com';
+
+  // ✅ Helper function to fix image URLs
+  const getImageUrl = (imagePath) => {
+    if (!imagePath) return 'https://placehold.co/1200x1600/1A1A1A/FF5C00?text=No+Image';
+    
+    // If it's a localhost URL, replace with production URL
+    if (imagePath.includes('localhost:5000')) {
+      return imagePath.replace('http://localhost:5000', apiUrl);
+    }
+    
+    // If it's already a full HTTPS URL, return it
+    if (imagePath.startsWith('https://')) return imagePath;
+    
+    // If it's a relative path, prepend the API URL
+    if (imagePath.startsWith('/uploads/')) {
+      return `${apiUrl}${imagePath}`;
+    }
+    
+    return imagePath;
+  };
+
+  // ✅ Get 4K quality image (add size parameter if supported)
+  const get4KImageUrl = (imagePath) => {
+    const baseUrl = getImageUrl(imagePath);
+    
+    // If it's from imgur or unsplash, add quality parameters
+    if (baseUrl.includes('imgur.com')) {
+      return baseUrl.replace('.jpeg', 'h.jpeg').replace('.jpg', 'h.jpg');
+    }
+    if (baseUrl.includes('unsplash.com')) {
+      return `${baseUrl}&q=100&fm=webp`;
+    }
+    if (baseUrl.includes('cloudinary.com')) {
+      return baseUrl.replace('/upload/', '/upload/q_auto:best,f_auto,dpr_2.0/');
+    }
+    
+    return baseUrl;
+  };
 
   useEffect(() => {
     fetchProduct();
@@ -87,14 +127,26 @@ const ProductDetail = () => {
 
   const nextImage = () => {
     if (product.images && currentImageIndex < product.images.length - 1) {
+      setIsImageLoading(true);
       setCurrentImageIndex(currentImageIndex + 1);
     }
   };
 
   const prevImage = () => {
     if (currentImageIndex > 0) {
+      setIsImageLoading(true);
       setCurrentImageIndex(currentImageIndex - 1);
     }
+  };
+
+  const openFullscreen = (imageUrl) => {
+    setFullscreenImage(get4KImageUrl(imageUrl));
+    document.body.style.overflow = 'hidden';
+  };
+
+  const closeFullscreen = () => {
+    setFullscreenImage(null);
+    document.body.style.overflow = 'auto';
   };
 
   if (loading) {
@@ -137,13 +189,25 @@ const ProductDetail = () => {
         <div className="grid md:grid-cols-2 gap-12">
           {/* Image Gallery */}
           <div>
-            {/* Main Image */}
-            <div className="relative bg-[#1A1A1A] rounded-xl overflow-hidden">
+            {/* Main Image with Zoom on Click */}
+            <div className="relative bg-[#1A1A1A] rounded-xl overflow-hidden group cursor-zoom-in">
+              {isImageLoading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-[#1A1A1A] z-10">
+                  <div className="animate-spin text-3xl">✦</div>
+                </div>
+              )}
               <img 
-                src={product.images?.[currentImageIndex] || 'https://placehold.co/600x800/1A1A1A/FF5C00?text=No+Image'} 
+                src={get4KImageUrl(product.images?.[currentImageIndex])} 
                 alt={product.name}
-                className="w-full h-[500px] object-cover"
+                className={`w-full h-[500px] md:h-[600px] object-cover transition-opacity duration-300 ${isImageLoading ? 'opacity-0' : 'opacity-100'}`}
+                onLoad={() => setIsImageLoading(false)}
+                onClick={() => openFullscreen(product.images?.[currentImageIndex])}
               />
+              
+              {/* Zoom hint */}
+              <div className="absolute bottom-4 right-4 bg-black/50 text-white text-xs px-2 py-1 rounded-full opacity-0 group-hover:opacity-100 transition">
+                🔍 Click to zoom
+              </div>
               
               {/* Navigation Arrows */}
               {product.images && product.images.length > 1 && (
@@ -151,40 +215,58 @@ const ProductDetail = () => {
                   <button
                     onClick={prevImage}
                     disabled={currentImageIndex === 0}
-                    className={`absolute left-4 top-1/2 transform -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 flex items-center justify-center hover:bg-[#FF5C00] transition ${currentImageIndex === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    className={`absolute left-4 top-1/2 transform -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 flex items-center justify-center hover:bg-[#FF5C00] transition z-20 ${
+                      currentImageIndex === 0 ? 'opacity-50 cursor-not-allowed' : 'opacity-100'
+                    }`}
                   >
                     ❮
                   </button>
                   <button
                     onClick={nextImage}
                     disabled={currentImageIndex === product.images.length - 1}
-                    className={`absolute right-4 top-1/2 transform -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 flex items-center justify-center hover:bg-[#FF5C00] transition ${currentImageIndex === product.images.length - 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    className={`absolute right-4 top-1/2 transform -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 flex items-center justify-center hover:bg-[#FF5C00] transition z-20 ${
+                      currentImageIndex === product.images.length - 1 ? 'opacity-50 cursor-not-allowed' : 'opacity-100'
+                    }`}
                   >
                     ❯
                   </button>
                 </>
               )}
+              
+              {/* Image counter */}
+              {product.images && product.images.length > 1 && (
+                <div className="absolute top-4 right-4 bg-black/50 text-white text-xs px-2 py-1 rounded-full">
+                  {currentImageIndex + 1} / {product.images.length}
+                </div>
+              )}
             </div>
 
-            {/* Thumbnail Gallery */}
+            {/* Thumbnail Gallery - HD Quality */}
             {product.images && product.images.length > 1 && (
-              <div className="flex gap-3 mt-4 overflow-x-auto pb-2">
+              <div className="flex gap-3 mt-4 overflow-x-auto pb-2 scrollbar-thin">
                 {product.images.map((img, idx) => (
                   <button
                     key={idx}
-                    onClick={() => setCurrentImageIndex(idx)}
-                    className={`w-20 h-20 rounded-lg overflow-hidden border-2 transition ${
-                      currentImageIndex === idx ? 'border-[#FF5C00]' : 'border-transparent hover:border-[#FF5C00]/50'
+                    onClick={() => {
+                      setIsImageLoading(true);
+                      setCurrentImageIndex(idx);
+                    }}
+                    className={`w-20 h-20 md:w-24 md:h-24 rounded-lg overflow-hidden border-2 transition flex-shrink-0 ${
+                      currentImageIndex === idx ? 'border-[#FF5C00] shadow-lg shadow-[#FF5C00]/30' : 'border-transparent hover:border-[#FF5C00]/50'
                     }`}
                   >
-                    <img src={img} alt={`${product.name} - ${idx + 1}`} className="w-full h-full object-cover" />
+                    <img 
+                      src={getImageUrl(img)} 
+                      alt={`${product.name} - ${idx + 1}`} 
+                      className="w-full h-full object-cover"
+                    />
                   </button>
                 ))}
               </div>
             )}
           </div>
 
-          {/* Product Info */}
+          {/* Product Info - Unchanged from your original */}
           <div>
             <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">{product.name}</h1>
             <div className="flex items-baseline gap-3 mb-4">
@@ -304,6 +386,29 @@ const ProductDetail = () => {
           </div>
         </div>
       </div>
+
+      {/* Fullscreen Modal for 4K Image Viewing */}
+      {fullscreenImage && (
+        <div 
+          className="fixed inset-0 bg-black/95 z-[100] flex items-center justify-center cursor-zoom-out"
+          onClick={closeFullscreen}
+        >
+          <button
+            onClick={closeFullscreen}
+            className="absolute top-4 right-4 text-white text-4xl hover:text-[#FF5C00] transition z-10"
+          >
+            ×
+          </button>
+          <img 
+            src={fullscreenImage} 
+            alt="4K Fullscreen"
+            className="max-w-[95vw] max-h-[95vh] object-contain"
+          />
+          <p className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-white/50 text-sm">
+            Click anywhere to close
+          </p>
+        </div>
+      )}
 
       {/* Toast Notification */}
       {showNotification && (
