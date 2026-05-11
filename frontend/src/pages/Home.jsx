@@ -314,7 +314,7 @@ const Home = () => {
             </div>
             <div className="relative reveal">
               <div className="absolute -inset-4 bg-[#00FF41]/20 rounded-2xl blur-xl animate-pulse"></div>
-              <img src="https://images.unsplash.com/photo-1534011546717-407bced4d25c?w=800" alt="African Culture" className="relative rounded-2xl shadow-2xl w-full" />
+              <img src="https://i.imgur.com/4I3Tl7j.jpeg?w=800" alt="African Culture" className="relative rounded-2xl shadow-2xl w-full" />
             </div>
           </div>
         </div>
