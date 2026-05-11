@@ -39,7 +39,7 @@ const Home = () => {
       message: "Not for everyone. Made for the few."
     },
     {
-      image: "https://i.imgur.com/4I3Tl7j.jpeg",
+      image: "https://i.imgur.com/MCjZLJG.jpeg",
       title: "STREET CULTURE",
       subtitle: "African Roots",
       message: "Where fashion meets heritage"
