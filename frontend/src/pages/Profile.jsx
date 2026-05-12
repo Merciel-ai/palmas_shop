@@ -20,24 +20,25 @@ const Profile = () => {
   const [nextDropName, setNextDropName] = useState('');
   const [nextDropDate, setNextDropDate] = useState(null);
   const [dropTimeLeft, setDropTimeLeft] = useState({ days: 0, hours: 0, mins: 0, secs: 0 });
+  
+  // Pagination state - shows 9 products initially, loads 9 more each time
+  const [visibleCount, setVisibleCount] = useState(9);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   const apiUrl = import.meta.env.VITE_API_URL || 'https://palmas-api-jhip.onrender.com';
 
   // Helper function to fix image URLs
   const getImageUrl = (imagePath) => {
-    if (!imagePath) return '/placeholder-image.jpg';
+    if (!imagePath) return 'https://placehold.co/600x800/1A1A1A/00FF41?text=No+Image';
     
-    // If it's a localhost URL, replace with production URL
     if (imagePath.includes('localhost:5000')) {
-      return imagePath.replace('http://localhost:5000', 'https://palmas-api-jhip.onrender.com');
+      return imagePath.replace('http://localhost:5000', apiUrl);
     }
     
-    // If it's already a full HTTPS URL, return it
     if (imagePath.startsWith('https://')) return imagePath;
     
-    // If it's a relative path, prepend the API URL
     if (imagePath.startsWith('/uploads/')) {
-      return `https://palmas-api-jhip.onrender.com${imagePath}`;
+      return `${apiUrl}${imagePath}`;
     }
     
     return imagePath;
@@ -76,7 +77,15 @@ const Profile = () => {
     }
   };
 
-  // ✅ FIXED: Single useEffect for initial data loading
+  // Load more products
+  const loadMoreProducts = () => {
+    setIsLoadingMore(true);
+    setTimeout(() => {
+      setVisibleCount(prev => prev + 9);
+      setIsLoadingMore(false);
+    }, 500);
+  };
+
   useEffect(() => {
     fetchProducts();
     fetchUserOrders();
@@ -88,9 +97,8 @@ const Profile = () => {
     
     const timer = setTimeout(() => setShowWelcome(false), 5000);
     return () => clearTimeout(timer);
-  }, []); // Empty dependency array means this runs once on mount
+  }, []);
 
-  // ✅ FIXED: Separate useEffect for countdown timer
   useEffect(() => {
     if (nextDropEnabled && nextDropDate) {
       const timer = setInterval(() => {
@@ -153,15 +161,18 @@ const Profile = () => {
   const filteredProducts = products.filter(p =>
     p.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
-
-  const featuredProducts = filteredProducts.slice(0, 4);
+  
+  // Show ALL filtered products with pagination (not just 4)
+  const displayedProducts = filteredProducts.slice(0, visibleCount);
+  const hasMoreProducts = visibleCount < filteredProducts.length;
+  const totalProductsCount = filteredProducts.length;
 
   return (
     <div className="min-h-screen bg-black pt-20">
       <div className="max-w-7xl mx-auto px-4 py-8">
         
         {/* Navigation Tabs */}
-        <div className="flex gap-1 mb-8 border-b border-gray-800">
+        <div className="flex gap-1 mb-8 border-b border-gray-800 overflow-x-auto">
           {[
             { id: 'shop', label: '🛍️ SHOP' },
             { id: 'orders', label: '📦 ORDERS' },
@@ -171,7 +182,7 @@ const Profile = () => {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`px-6 py-3 font-medium transition-all ${
+              className={`px-4 sm:px-6 py-3 font-medium transition-all whitespace-nowrap ${
                 activeTab === tab.id 
                   ? 'text-[#00FF41] border-b-2 border-[#00FF41]' 
                   : 'text-gray-400 hover:text-white'
@@ -194,93 +205,150 @@ const Profile = () => {
           </div>
         )}
 
-        {/* SHOP TAB */}
+        {/* SHOP TAB - UPDATED with ALL products */}
         {activeTab === 'shop' && (
           <div className="grid lg:grid-cols-3 gap-8">
+            {/* Products Grid - Main Content */}
             <div className="lg:col-span-2 space-y-8">
               <div>
-                <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-xl font-semibold text-white">Featured Products</h2>
+                <div className="flex justify-between items-center mb-6 flex-wrap gap-2">
+                  <h2 className="text-xl font-semibold text-white">All Products</h2>
                   <div className="flex gap-2">
-                    <span className="text-xs px-2 py-1 bg-[#00FF41]/10 text-[#00FF41] rounded">NEW</span>
-                    <span className="text-xs px-2 py-1 bg-white/5 text-gray-400 rounded">LIMITED</span>
+                    <span className="text-xs px-2 py-1 bg-[#00FF41]/10 text-[#00FF41] rounded">
+                      {totalProductsCount} item{totalProductsCount !== 1 ? 's' : ''}
+                    </span>
+                    {searchTerm && (
+                      <span className="text-xs px-2 py-1 bg-white/10 text-gray-400 rounded">
+                        Showing: {filteredProducts.length} of {products.length}
+                      </span>
+                    )}
                   </div>
                 </div>
                 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  {featuredProducts.map((product) => (
-                    <Link to={`/product/${product._id}`} key={product._id}>
-                      <div className="group bg-[#1A1A1A] rounded-xl overflow-hidden hover:shadow-xl transition-all duration-300">
-                        <div className="relative overflow-hidden h-64">
-                          <img 
-                            src={getImageUrl(product.images?.[0])} 
-                            alt={product.name}
-                            onError={(e) => {
-                              e.target.onerror = null;
-                              e.target.src = '/placeholder-image.jpg';
-                            }}
-                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                          />
-                          <div className="absolute top-3 left-3 flex gap-2">
-                            {product.piecesLeft <= 10 && (
-                              <span className="text-xs bg-[#00FF41] text-black px-2 py-1 rounded">LIMITED</span>
-                            )}
-                            {product.isNegotiable && (
-                              <span className="text-xs bg-purple-500 text-white px-2 py-1 rounded">NEGOTIABLE</span>
-                            )}
-                          </div>
-                          <button 
-                            onClick={(e) => {
-                              e.preventDefault();
-                              handleWishlist(product);
-                            }}
-                            className="absolute top-3 right-3 w-8 h-8 bg-black/50 rounded-full flex items-center justify-center hover:bg-[#00FF41] transition"
-                          >
-                            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                            </svg>
-                          </button>
-                        </div>
-                        <div className="p-4">
-                          <h3 className="font-medium text-white mb-1">{product.name}</h3>
-                          <div className="flex justify-between items-center mb-3">
-                            <span className="text-xl font-bold text-[#00FF41]">{formatCFA(product.priceCFA)} CFA</span>
-                            {product.originalPriceCFA && product.originalPriceCFA > product.priceCFA && (
-                              <span className="text-xs text-gray-500 line-through">{formatCFA(product.originalPriceCFA)} CFA</span>
-                            )}
-                          </div>
-                          <div className="flex gap-2">
-                            <button 
-                              onClick={(e) => {
-                                e.preventDefault();
-                                handleAddToCart(product);
-                              }}
-                              className="flex-1 bg-[#00FF41] text-black text-sm py-2 rounded-lg font-medium hover:bg-[#39FF14] transition"
-                            >
-                              ADD TO CART
-                            </button>
-                            {product.isNegotiable && (
+                {filteredProducts.length === 0 ? (
+                  <div className="text-center py-12 bg-[#1A1A1A] rounded-xl">
+                    <p className="text-4xl mb-3">🔍</p>
+                    <p className="text-gray-400">No products found</p>
+                    {searchTerm && (
+                      <button 
+                        onClick={() => setSearchTerm('')}
+                        className="mt-3 text-[#00FF41] text-sm hover:underline"
+                      >
+                        Clear search
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                      {displayedProducts.map((product) => (
+                        <Link to={`/product/${product._id}`} key={product._id}>
+                          <div className="group bg-[#1A1A1A] rounded-xl overflow-hidden hover:shadow-xl hover:shadow-[#00FF41]/20 transition-all duration-300 h-full flex flex-col">
+                            <div className="relative overflow-hidden h-64 bg-[#111]">
+                              <img 
+                                src={getImageUrl(product.images?.[0])} 
+                                alt={product.name}
+                                onError={(e) => {
+                                  e.target.onerror = null;
+                                  e.target.src = 'https://placehold.co/600x800/1A1A1A/00FF41?text=No+Image';
+                                }}
+                                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                              />
+                              <div className="absolute top-3 left-3 flex gap-2">
+                                {product.piecesLeft <= 10 && product.piecesLeft > 0 && (
+                                  <span className="text-xs bg-[#00FF41] text-black px-2 py-1 rounded font-bold animate-pulse">LAST {product.piecesLeft}</span>
+                                )}
+                                {product.isNegotiable && (
+                                  <span className="text-xs bg-purple-500 text-white px-2 py-1 rounded">NEGOTIABLE</span>
+                                )}
+                              </div>
                               <button 
                                 onClick={(e) => {
                                   e.preventDefault();
-                                  handleNegotiate(product);
+                                  handleWishlist(product);
                                 }}
-                                className="px-3 py-2 border border-[#00FF41] text-[#00FF41] text-sm rounded-lg hover:bg-[#00FF41] hover:text-black transition"
+                                className="absolute top-3 right-3 w-8 h-8 bg-black/50 rounded-full flex items-center justify-center hover:bg-[#00FF41] transition"
                               >
-                                NEGOTIATE
+                                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                                </svg>
                               </button>
-                            )}
+                              {product.piecesLeft === 0 && (
+                                <div className="absolute inset-0 bg-black/80 flex items-center justify-center z-10 backdrop-blur-sm">
+                                  <span className="text-white text-lg sm:text-xl font-bold">SOLD OUT</span>
+                                </div>
+                              )}
+                            </div>
+                            <div className="p-4 flex-1 flex flex-col">
+                              <h3 className="font-bold text-white mb-1 line-clamp-1">{product.name}</h3>
+                              <div className="flex justify-between items-center mb-3">
+                                <span className="text-xl font-bold text-[#00FF41]">{formatCFA(product.priceCFA)} CFA</span>
+                                {product.originalPriceCFA && product.originalPriceCFA > product.priceCFA && (
+                                  <span className="text-xs text-gray-500 line-through">{formatCFA(product.originalPriceCFA)} CFA</span>
+                                )}
+                              </div>
+                              <div className="flex gap-2 mt-auto">
+                                <button 
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    handleAddToCart(product);
+                                  }}
+                                  className="flex-1 bg-[#00FF41] text-black text-sm py-2 rounded-lg font-medium hover:bg-[#39FF14] transition"
+                                >
+                                  ADD TO CART
+                                </button>
+                                {product.isNegotiable && (
+                                  <button 
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      handleNegotiate(product);
+                                    }}
+                                    className="px-3 py-2 border border-[#00FF41] text-[#00FF41] text-sm rounded-lg hover:bg-[#00FF41] hover:text-black transition"
+                                    title="Negotiate price"
+                                  >
+                                    💬
+                                  </button>
+                                )}
+                              </div>
+                            </div>
                           </div>
-                        </div>
+                        </Link>
+                      ))}
+                    </div>
+                    
+                    {/* Load More Button */}
+                    {hasMoreProducts && (
+                      <div className="flex justify-center mt-8">
+                        <button
+                          onClick={loadMoreProducts}
+                          disabled={isLoadingMore}
+                          className="px-8 py-3 border-2 border-[#00FF41] text-[#00FF41] rounded-lg font-bold hover:bg-[#00FF41] hover:text-black transition disabled:opacity-50"
+                        >
+                          {isLoadingMore ? (
+                            <span className="flex items-center gap-2">
+                              <span className="animate-spin">✦</span> Loading...
+                            </span>
+                          ) : (
+                            `Load More (${filteredProducts.length - visibleCount} remaining)`
+                          )}
+                        </button>
                       </div>
-                    </Link>
-                  ))}
-                </div>
+                    )}
+                    
+                    {/* All products loaded message */}
+                    {!hasMoreProducts && filteredProducts.length > 9 && (
+                      <p className="text-center text-gray-500 text-sm mt-6">
+                        ✦ All {filteredProducts.length} products loaded ✦
+                      </p>
+                    )}
+                  </>
+                )}
               </div>
             </div>
 
-            {/* Sidebar */}
+            {/* Sidebar - Search and Filters */}
             <div className="space-y-6">
+              {/* Search Box */}
               <div className="bg-[#1A1A1A] rounded-xl p-5">
                 <h3 className="text-sm font-semibold text-white mb-3">Search</h3>
                 <div className="relative">
@@ -295,9 +363,39 @@ const Profile = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
                 </div>
+                {searchTerm && (
+                  <button 
+                    onClick={() => setSearchTerm('')}
+                    className="text-xs text-gray-500 mt-2 hover:text-[#00FF41] transition"
+                  >
+                    Clear search ✕
+                  </button>
+                )}
               </div>
 
-              {/* Next Drop Countdown - Only shows when admin enables it */}
+              {/* Category Quick Filters */}
+              <div className="bg-[#1A1A1A] rounded-xl p-5">
+                <h3 className="text-sm font-semibold text-white mb-3">Categories</h3>
+                <div className="flex flex-wrap gap-2">
+                  {['ALL', 'HOODIES', 'TEES', 'ACCESSORIES', 'JACKETS', 'PANTS', 'SHORTS', 'SHOES', 'HATS', 'BAGS', 'JEWELRY'].map(cat => (
+                    <button
+                      key={cat}
+                      onClick={() => {
+                        if (cat === 'ALL') {
+                          setSearchTerm('');
+                        } else {
+                          setSearchTerm(cat.toLowerCase());
+                        }
+                      }}
+                      className="text-xs px-3 py-1.5 rounded-full border border-[#00FF41]/30 hover:border-[#00FF41] text-gray-300 hover:text-[#00FF41] transition"
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Next Drop Countdown */}
               {nextDropEnabled && dropTimeLeft && (
                 <div className="bg-gradient-to-br from-[#00FF41]/10 to-transparent border border-[#00FF41]/20 rounded-xl p-5">
                   <h3 className="text-sm font-semibold text-white mb-2">{nextDropName || 'Next Drop'}</h3>
@@ -311,6 +409,7 @@ const Profile = () => {
                 </div>
               )}
 
+              {/* Subscribe Section */}
               <div className="bg-[#1A1A1A] rounded-xl p-5">
                 <h3 className="text-sm font-semibold text-white mb-2">Don't miss out</h3>
                 <p className="text-xs text-gray-500 mb-3">Subscribe for exclusive access</p>
@@ -320,6 +419,7 @@ const Profile = () => {
                 </div>
               </div>
 
+              {/* Wishlist Preview */}
               <div className="bg-[#1A1A1A] rounded-xl p-5">
                 <div className="flex justify-between items-center mb-3">
                   <h3 className="text-sm font-semibold text-white">Wishlist</h3>
@@ -333,12 +433,12 @@ const Profile = () => {
                         alt={item.name}
                         onError={(e) => {
                           e.target.onerror = null;
-                          e.target.src = '/placeholder-image.jpg';
+                          e.target.src = 'https://placehold.co/100x100/1A1A1A/00FF41?text=No+Image';
                         }}
                         className="w-10 h-10 rounded object-cover" 
                       />
                       <div className="flex-1">
-                        <p className="text-xs text-white">{item.name}</p>
+                        <p className="text-xs text-white line-clamp-1">{item.name}</p>
                         <p className="text-xs text-[#00FF41]">{formatCFA(item.priceCFA)} CFA</p>
                       </div>
                     </div>
@@ -418,18 +518,18 @@ const Profile = () => {
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {wishlist.map((product) => (
-                  <div key={product._id} className="bg-[#1A1A1A] rounded-xl overflow-hidden">
-                    <div className="relative h-48">
+                  <div key={product._id} className="bg-[#1A1A1A] rounded-xl overflow-hidden group hover:shadow-xl hover:shadow-[#00FF41]/20 transition-all duration-300">
+                    <div className="relative h-48 overflow-hidden">
                       <img 
                         src={getImageUrl(product.images?.[0])} 
                         alt={product.name}
                         onError={(e) => {
                           e.target.onerror = null;
-                          e.target.src = '/placeholder-image.jpg';
+                          e.target.src = 'https://placehold.co/400x400/1A1A1A/00FF41?text=No+Image';
                         }}
-                        className="w-full h-full object-cover" 
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
                       />
                       <button 
                         onClick={() => handleWishlist(product)}
@@ -441,7 +541,7 @@ const Profile = () => {
                       </button>
                     </div>
                     <div className="p-4">
-                      <h3 className="font-bold text-white">{product.name}</h3>
+                      <h3 className="font-bold text-white line-clamp-1">{product.name}</h3>
                       <p className="text-[#00FF41] font-bold mt-1">{formatCFA(product.priceCFA)} CFA</p>
                       <button onClick={() => handleAddToCart(product)} className="w-full mt-3 bg-[#00FF41] text-black py-2 rounded-lg font-medium text-sm hover:bg-[#39FF14] transition">
                         ADD TO CART
@@ -491,14 +591,30 @@ const Profile = () => {
         {/* Footer */}
         <footer className="mt-12 pt-8 border-t border-white/10">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
-            <div><h4 className="text-xs font-semibold text-white mb-3">PALMAS</h4><p className="text-xs text-gray-500">Not for everyone.<br/>Made for the few.</p></div>
-            <div><h4 className="text-xs font-semibold text-white mb-3">Support</h4><p className="text-xs text-gray-500">FAQ<br/>Shipping<br/>Returns</p></div>
-            <div><h4 className="text-xs font-semibold text-white mb-3">Legal</h4><p className="text-xs text-gray-500">Terms<br/>Privacy<br/>Cookies</p></div>
-            <div><h4 className="text-xs font-semibold text-white mb-3">Social</h4><p className="text-xs text-gray-500">Instagram<br/>Twitter<br/>TikTok</p></div>
+            <div>
+              <h4 className="text-xs font-semibold text-white mb-3">PALMAS</h4>
+              <p className="text-xs text-gray-500">Not for everyone.<br/>Made for the few.</p>
+            </div>
+            <div>
+              <h4 className="text-xs font-semibold text-white mb-3">Support</h4>
+              <p className="text-xs text-gray-500">FAQ<br/>Shipping<br/>Returns</p>
+            </div>
+            <div>
+              <h4 className="text-xs font-semibold text-white mb-3">Legal</h4>
+              <p className="text-xs text-gray-500">Terms<br/>Privacy<br/>Cookies</p>
+            </div>
+            <div>
+              <h4 className="text-xs font-semibold text-white mb-3">Social</h4>
+              <p className="text-xs text-gray-500">Instagram<br/>Twitter<br/>TikTok</p>
+            </div>
           </div>
           <div className="flex justify-between items-center flex-wrap gap-4">
             <p className="text-xs text-gray-600">© 2026 PALMAS. All rights reserved.</p>
-            <div className="flex gap-4"><span className="text-xs text-gray-500">✦ SECURE PAYMENT</span><span className="text-xs text-gray-500">✦ WORLDWIDE SHIPPING</span><span className="text-xs text-gray-500">✦ PREMIUM QUALITY</span></div>
+            <div className="flex gap-4">
+              <span className="text-xs text-gray-500">✦ SECURE PAYMENT</span>
+              <span className="text-xs text-gray-500">✦ WORLDWIDE SHIPPING</span>
+              <span className="text-xs text-gray-500">✦ PREMIUM QUALITY</span>
+            </div>
           </div>
         </footer>
       </div>
