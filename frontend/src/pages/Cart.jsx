@@ -17,7 +17,27 @@ const Cart = () => {
   const [transactionId, setTransactionId] = useState(null);
   const [pollingInterval, setPollingInterval] = useState(null);
 
-  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+  const apiUrl = import.meta.env.VITE_API_URL || 'https://palmas-api-jhip.onrender.com';
+
+  // ✅ Helper function to fix image URLs
+  const getImageUrl = (imagePath) => {
+    if (!imagePath) return 'https://placehold.co/400x400/1A1A1A/FF5C00?text=No+Image';
+    
+    // If it's a localhost URL, replace with production URL
+    if (imagePath.includes('localhost:5000')) {
+      return imagePath.replace('http://localhost:5000', 'https://palmas-api-jhip.onrender.com');
+    }
+    
+    // If it's already a full HTTPS URL, return it
+    if (imagePath.startsWith('https://')) return imagePath;
+    
+    // If it's a relative path, prepend the API URL
+    if (imagePath.startsWith('/uploads/')) {
+      return `https://palmas-api-jhip.onrender.com${imagePath}`;
+    }
+    
+    return imagePath;
+  };
 
   const formatCFA = (amount) => {
     return (amount || 0).toLocaleString();
@@ -201,7 +221,16 @@ const Cart = () => {
               <h1 className="text-2xl font-bold text-white mb-4">Shopping Cart ({cart.length})</h1>
               {cart.map((item) => (
                 <div key={item._id} className="bg-[#1A1A1A] rounded-xl p-4 flex gap-4">
-                  <img src={item.images?.[0]} alt={item.name} className="w-24 h-24 object-cover rounded-lg" />
+                  {/* ✅ Fixed image URL */}
+                  <img 
+                    src={getImageUrl(item.images?.[0])} 
+                    alt={item.name} 
+                    className="w-24 h-24 object-cover rounded-lg"
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = 'https://placehold.co/400x400/1A1A1A/FF5C00?text=No+Image';
+                    }}
+                  />
                   <div className="flex-1">
                     <h3 className="font-bold text-white">{item.name}</h3>
                     <p className="text-[#FF5C00] font-bold text-lg">{formatCFA(item.priceCFA)} CFA</p>
